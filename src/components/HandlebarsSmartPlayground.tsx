@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useCallback, useMemo } from "react";
 import Handlebars from "handlebars";
 import Editor from "@monaco-editor/react";
 import { extractHandlebarsKeys } from "../utils/extractHandlebarsKeys";
@@ -13,28 +13,31 @@ export const HandlebarsSmartPlayground = () => {
     uploadTime: string;
   } | null>(null);
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const handleFileUpload = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
 
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const html = event.target?.result as string;
-      setTemplate(html);
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const html = event.target?.result as string;
+        setTemplate(html);
 
-      const keys = extractHandlebarsKeys(html);
-      const initialData = generateDefaultData(keys);
-      setDataJson(JSON.stringify(initialData, null, 2));
+        const keys = extractHandlebarsKeys(html);
+        const initialData = generateDefaultData(keys);
+        setDataJson(JSON.stringify(initialData, null, 2));
 
-      const uploadTime = new Date().toLocaleString();
-      setFileInfo({ name: file.name, uploadTime });
-    };
-    reader.readAsText(file);
+        const uploadTime = new Date().toLocaleString();
+        setFileInfo({ name: file.name, uploadTime });
+      };
+      reader.readAsText(file);
 
-    e.target.value = "";
-  };
+      e.target.value = "";
+    },
+    []
+  );
 
-  const handleCompile = () => {
+  const handleCompile = useCallback(() => {
     try {
       const data = JSON.parse(dataJson);
       const compiled = Handlebars.compile(template);
@@ -45,14 +48,31 @@ export const HandlebarsSmartPlayground = () => {
         `<pre style="color: red;">${(error as Error).message}</pre>`
       );
     }
-  };
+  }, [template, dataJson]);
 
-  const handleClear = () => {
+  const handleClear = useCallback(() => {
     setTemplate("");
     setDataJson("{}");
     setCompiledHtml("");
     setFileInfo(null);
-  };
+  }, []);
+
+  const handleTemplateChange = useCallback((value: string | undefined) => {
+    setTemplate(value || "");
+  }, []);
+
+  const handleDataJsonChange = useCallback((value: string | undefined) => {
+    setDataJson(value || "{}");
+  }, []);
+
+  const renderedResult = useMemo(() => {
+    return (
+      <div
+        className="border rounded p-4 bg-white shadow-inner"
+        dangerouslySetInnerHTML={{ __html: compiledHtml }}
+      />
+    );
+  }, [compiledHtml]);
 
   return (
     <div className="space-y-4">
@@ -76,7 +96,7 @@ export const HandlebarsSmartPlayground = () => {
             height="100%"
             defaultLanguage="html"
             value={template}
-            onChange={(value) => setTemplate(value || "")}
+            onChange={handleTemplateChange}
             theme="vs-dark"
             options={{
               minimap: { enabled: false },
@@ -98,7 +118,7 @@ export const HandlebarsSmartPlayground = () => {
             height="100%"
             defaultLanguage="json"
             value={dataJson}
-            onChange={(value) => setDataJson(value || "{}")}
+            onChange={handleDataJsonChange}
             theme="vs-dark"
             options={{
               minimap: { enabled: false },
@@ -127,10 +147,7 @@ export const HandlebarsSmartPlayground = () => {
 
       <div>
         <label className="block font-semibold">Resultado Renderizado</label>
-        <div
-          className="border rounded p-4 bg-white shadow-inner"
-          dangerouslySetInnerHTML={{ __html: compiledHtml }}
-        />
+        {renderedResult}
       </div>
     </div>
   );
