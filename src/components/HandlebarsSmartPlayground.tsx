@@ -47,6 +47,13 @@ export const HandlebarsSmartPlayground = () => {
     }
   };
 
+  const handleClear = () => {
+    setTemplate("");
+    setDataJson("{}");
+    setCompiledHtml("");
+    setFileInfo(null);
+  };
+
   return (
     <div className="space-y-4">
       <div>
@@ -103,12 +110,20 @@ export const HandlebarsSmartPlayground = () => {
         </div>
       </div>
 
-      <button
-        className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-        onClick={handleCompile}
-      >
-        Renderizar
-      </button>
+      <div className="flex space-x-2">
+        <button
+          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+          onClick={handleCompile}
+        >
+          Renderizar
+        </button>
+        <button
+          className="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700"
+          onClick={handleClear}
+        >
+          Limpar
+        </button>
+      </div>
 
       <div>
         <label className="block font-semibold">Resultado Renderizado</label>
